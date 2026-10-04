@@ -2,7 +2,6 @@
 
 import { useSyncExternalStore } from "react";
 import { progressStore } from "./store";
-import { getAllLessonsForCourse, getCoursesForCareerPath } from "@/lib/data";
 
 export function useProgress() {
   return useSyncExternalStore(
@@ -12,25 +11,30 @@ export function useProgress() {
   );
 }
 
-export function useCourseProgress(courseId: string) {
+/**
+ * Calcula o progresso de um curso a partir da lista de ids de aula já
+ * resolvida pelo Server Component (ver src/lib/data — local em modo
+ * demonstração, Supabase quando configurado). Os hooks em si não acessam a
+ * camada de dados diretamente: ids de aula variam entre os dois modos
+ * (slugs locais x uuids do banco), então quem sabe a lista correta é
+ * sempre quem buscou o conteúdo da página.
+ */
+export function useCourseProgress(courseId: string, lessonIds: string[]) {
   const state = useProgress();
-  const lessons = getAllLessonsForCourse(courseId);
-  const total = lessons.length;
-  const completed = lessons.filter(({ lesson }) => state.completedLessons.includes(lesson.id)).length;
+  const total = lessonIds.length;
+  const completed = lessonIds.filter((id) => state.completedLessons.includes(id)).length;
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
   return { total, completed, percent, isEnrolled: state.enrolledCourses.includes(courseId) };
 }
 
-export function useCareerPathProgress(pathSlug: string) {
+export function useCareerPathProgress(courses: { lessonIds: string[] }[]) {
   const state = useProgress();
-  const courses = getCoursesForCareerPath(pathSlug);
   let total = 0;
   let completed = 0;
-  for (const course of courses) {
-    const lessons = getAllLessonsForCourse(course.id);
-    total += lessons.length;
-    completed += lessons.filter(({ lesson }) => state.completedLessons.includes(lesson.id)).length;
+  for (const { lessonIds } of courses) {
+    total += lessonIds.length;
+    completed += lessonIds.filter((id) => state.completedLessons.includes(id)).length;
   }
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
-  return { total, completed, percent, courses };
+  return { total, completed, percent };
 }

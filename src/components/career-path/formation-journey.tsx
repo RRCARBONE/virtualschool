@@ -8,10 +8,15 @@ import { Button, LinkButton } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Cover } from "@/components/ui/cover";
 import { formatMinutes, levelLabel } from "@/lib/utils";
-import { getAllLessonsForCourse } from "@/lib/data";
 
-export function FormationHeaderProgress({ pathId, pathSlug }: { pathId: string; pathSlug: string }) {
-  const { percent, completed, total } = useCareerPathProgress(pathSlug);
+export function FormationHeaderProgress({
+  pathId,
+  courses,
+}: {
+  pathId: string;
+  courses: { lessonIds: string[] }[];
+}) {
+  const { percent, completed, total } = useCareerPathProgress(courses);
   const started = completed > 0;
 
   return (
@@ -29,10 +34,17 @@ export function FormationHeaderProgress({ pathId, pathSlug }: { pathId: string; 
   );
 }
 
-export function CourseJourneyItem({ course, index }: { course: Course; index: number }) {
-  const { percent, completed, total } = useCourseProgress(course.id);
-  const lessons = getAllLessonsForCourse(course.id);
-  const firstLessonId = lessons[0]?.lesson.id;
+export function CourseJourneyItem({
+  course,
+  index,
+  lessonIds,
+}: {
+  course: Course;
+  index: number;
+  lessonIds: string[];
+}) {
+  const { percent, completed, total } = useCourseProgress(course.id, lessonIds);
+  const firstLessonId = lessonIds[0];
   const isComplete = total > 0 && completed === total;
 
   return (

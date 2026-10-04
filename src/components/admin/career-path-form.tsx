@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { CareerPath } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { AdminField, inputClass } from "./drawer";
-import { professions, allCourses } from "@/lib/data";
+import { professions } from "@/lib/data/professions";
+import { allCourses } from "@/lib/data/catalog";
 
 export function CareerPathForm({
   initial,

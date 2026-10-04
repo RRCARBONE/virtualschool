@@ -5,9 +5,10 @@ import { AreaCard } from "@/components/catalog/area-card";
 import { CareerPathCard } from "@/components/catalog/career-path-card";
 import { LinkButton } from "@/components/ui/button";
 import { RatingStars } from "@/components/rating-stars";
-import { areas, careerPaths, reviews, averageRating } from "@/lib/data";
+import { getAreas, getCareerPaths, reviews, averageRating } from "@/lib/data";
 
-export default function Home() {
+export default async function Home() {
+  const [areas, careerPaths] = await Promise.all([getAreas(), getCareerPaths()]);
   const featuredAreas = areas.slice(0, 12);
   const overallRating = averageRating(reviews);
 

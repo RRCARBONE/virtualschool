@@ -10,14 +10,13 @@ export async function generateMetadata({
   params: Promise<{ curso: string; quiz: string }>;
 }): Promise<Metadata> {
   const { quiz: quizId } = await params;
-  const quiz = getQuizById(quizId);
+  const quiz = await getQuizById(quizId);
   return quiz ? { title: quiz.title } : {};
 }
 
 export default async function QuizPage({ params }: { params: Promise<{ curso: string; quiz: string }> }) {
   const { curso, quiz: quizId } = await params;
-  const course = getCourse(curso);
-  const quiz = getQuizById(quizId);
+  const [course, quiz] = await Promise.all([getCourse(curso), getQuizById(quizId)]);
   if (!course || !quiz) notFound();
 
   const isFinal = quiz.kind === "avaliacao_final" && quiz.courseId === course.id;

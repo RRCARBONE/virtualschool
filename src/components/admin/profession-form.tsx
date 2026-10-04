@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Profession } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { AdminField, inputClass } from "./drawer";
-import { areas } from "@/lib/data";
+import { areas } from "@/lib/data/areas";
 
 type FormValues = Omit<Profession, "id" | "formationIds"> & { formationIds?: string[] };
 

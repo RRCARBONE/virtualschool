@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Briefcase, CheckCircle2, ChevronRight, MapPin, Wallet } from "lucide-react";
 import { LinkButton } from "@/components/ui/button";
 import { CareerPathCard } from "@/components/catalog/career-path-card";
-import { getArea, getProfession, careerPaths } from "@/lib/data";
+import { getArea, getProfession, getCareerPaths } from "@/lib/data";
 
 export async function generateMetadata({
   params,
@@ -12,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ area: string; profissao: string }>;
 }): Promise<Metadata> {
   const { profissao } = await params;
-  const profession = getProfession(profissao);
+  const profession = await getProfession(profissao);
   if (!profession) return {};
   return { title: profession.name, description: profession.summary };
 }
@@ -23,11 +23,11 @@ export default async function ProfessionPage({
   params: Promise<{ area: string; profissao: string }>;
 }) {
   const { area: areaSlug, profissao } = await params;
-  const area = getArea(areaSlug);
-  const profession = getProfession(profissao);
+  const [area, profession] = await Promise.all([getArea(areaSlug), getProfession(profissao)]);
   if (!area || !profession || profession.areaId !== area.id) notFound();
 
-  const formations = careerPaths.filter((cp) => profession.formationIds.includes(cp.id));
+  const allPaths = await getCareerPaths();
+  const formations = allPaths.filter((cp) => profession.formationIds.includes(cp.id));
 
   return (
     <div className="container-app py-12">

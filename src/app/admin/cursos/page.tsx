@@ -6,7 +6,8 @@ import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/card";
 import { useCoursesWithPublishState } from "@/lib/admin/use-admin";
 import { adminStore } from "@/lib/admin/store";
-import { areas, getModulesForCourse, getLessonsForModule } from "@/lib/data";
+import { areas } from "@/lib/data/areas";
+import { getModulesForCourseLocal, getLessonsForModuleLocal } from "@/lib/data/catalog";
 import { formatMinutes, levelLabel } from "@/lib/utils";
 
 export default function AdminCoursesPage() {
@@ -39,7 +40,7 @@ export default function AdminCoursesPage() {
 
       <div className="mt-4 divide-y divide-border rounded-2xl border border-border bg-surface shadow-card">
         {filtered.map((course) => {
-          const modules = getModulesForCourse(course.id);
+          const modules = getModulesForCourseLocal(course.id);
           const isOpen = expanded === course.id;
           return (
             <div key={course.id}>
@@ -83,7 +84,7 @@ export default function AdminCoursesPage() {
                     <div key={mod.id} className="rounded-xl bg-surface p-3 text-sm">
                       <p className="font-semibold">Módulo {i + 1}: {mod.title}</p>
                       <ul className="mt-1 list-disc pl-5 text-muted">
-                        {getLessonsForModule(mod.id).map((lesson) => (
+                        {getLessonsForModuleLocal(mod.id).map((lesson) => (
                           <li key={lesson.id}>{lesson.title}</li>
                         ))}
                       </ul>

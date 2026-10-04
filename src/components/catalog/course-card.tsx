@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/card";
 import { formatMinutes, levelLabel } from "@/lib/utils";
 import { getAITeacher, getModulesForCourse, getAllLessonsForCourse } from "@/lib/data";
 
-export function CourseCard({ course }: { course: Course }) {
-  const teacher = getAITeacher(course.aiTeacherId);
-  const lessonCount = getAllLessonsForCourse(course.id).length;
-  const moduleCount = getModulesForCourse(course.id).length;
+export async function CourseCard({ course }: { course: Course }) {
+  const [teacher, lessons, modules] = await Promise.all([
+    getAITeacher(course.aiTeacherId),
+    getAllLessonsForCourse(course.id),
+    getModulesForCourse(course.id),
+  ]);
 
   return (
     <Link
@@ -29,7 +31,7 @@ export function CourseCard({ course }: { course: Course }) {
         <h3 className="font-semibold leading-snug">{course.title}</h3>
         <p className="line-clamp-2 text-sm text-muted">{course.description}</p>
         <div className="mt-auto flex items-center justify-between pt-2 text-xs text-muted">
-          <span>{moduleCount} módulos · {lessonCount} aulas</span>
+          <span>{modules.length} módulos · {lessons.length} aulas</span>
           {teacher && (
             <span className="flex items-center gap-1 font-medium text-foreground">
               {teacher.avatar} {teacher.name}

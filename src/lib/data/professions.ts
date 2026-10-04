@@ -244,6 +244,10 @@ export function getProfessionBySlug(slug: string) {
   return professions.find((p) => p.slug === slug);
 }
 
+export function getProfessionById(id: string) {
+  return professions.find((p) => p.id === id);
+}
+
 export function getProfessionsByArea(areaId: string) {
   return professions.filter((p) => p.areaId === areaId);
 }

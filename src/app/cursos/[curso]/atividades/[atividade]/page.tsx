@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ curso: string; atividade: string }>;
 }): Promise<Metadata> {
   const { atividade } = await params;
-  const activity = getActivityById(atividade);
+  const activity = await getActivityById(atividade);
   return activity ? { title: activity.title } : {};
 }
 
@@ -20,11 +20,10 @@ export default async function ActivityPage({
   params: Promise<{ curso: string; atividade: string }>;
 }) {
   const { curso, atividade } = await params;
-  const course = getCourse(curso);
-  const activity = getActivityById(atividade);
+  const [course, activity] = await Promise.all([getCourse(curso), getActivityById(atividade)]);
   if (!course || !activity) notFound();
 
-  const owningCourse = activity.lessonId ? findCourseByLessonId(activity.lessonId) : undefined;
+  const owningCourse = activity.lessonId ? await findCourseByLessonId(activity.lessonId) : undefined;
   if (owningCourse && owningCourse.id !== course.id) notFound();
 
   return (

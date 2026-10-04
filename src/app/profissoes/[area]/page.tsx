@@ -12,17 +12,17 @@ export async function generateMetadata({
   params: Promise<{ area: string }>;
 }): Promise<Metadata> {
   const { area: areaSlug } = await params;
-  const area = getArea(areaSlug);
+  const area = await getArea(areaSlug);
   if (!area) return {};
   return { title: area.name, description: area.description };
 }
 
 export default async function AreaPage({ params }: { params: Promise<{ area: string }> }) {
   const { area: areaSlug } = await params;
-  const area = getArea(areaSlug);
+  const area = await getArea(areaSlug);
   if (!area) notFound();
 
-  const professions = getProfessionsForArea(area.id);
+  const professions = await getProfessionsForArea(area.id);
 
   return (
     <div className="container-app py-12">

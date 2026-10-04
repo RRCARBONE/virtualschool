@@ -18,22 +18,29 @@ import {
 
 export async function generateMetadata({ params }: { params: Promise<{ curso: string }> }): Promise<Metadata> {
   const { curso } = await params;
-  const course = getCourse(curso);
+  const course = await getCourse(curso);
   if (!course) return {};
   return { title: course.title, description: course.description };
 }
 
 export default async function CoursePage({ params }: { params: Promise<{ curso: string }> }) {
   const { curso } = await params;
-  const course = getCourse(curso);
+  const course = await getCourse(curso);
   if (!course) notFound();
 
-  const modules = getModulesForCourse(course.id);
-  const teacher = getAITeacher(course.aiTeacherId);
-  const material = getMaterialForCourse(course.id);
-  const careerPath = findCareerPathForCourse(course.id);
-  const finalQuiz = getFinalQuizForCourse(course.id);
-  const totalLessons = modules.reduce((sum, m) => sum + getLessonsForModule(m.id).length, 0);
+  const [modules, teacher, material, careerPath, finalQuiz] = await Promise.all([
+    getModulesForCourse(course.id),
+    getAITeacher(course.aiTeacherId),
+    getMaterialForCourse(course.id),
+    findCareerPathForCourse(course.id),
+    getFinalQuizForCourse(course.id),
+  ]);
+
+  const modulesWithLessons = await Promise.all(
+    modules.map(async (mod) => ({ mod, lessons: await getLessonsForModule(mod.id) }))
+  );
+  const totalLessons = modulesWithLessons.reduce((sum, m) => sum + m.lessons.length, 0);
+  const lessonIds = modulesWithLessons.flatMap((m) => m.lessons.map((l) => l.id));
 
   return (
     <div className="container-app py-12">
@@ -84,7 +91,7 @@ export default async function CoursePage({ params }: { params: Promise<{ curso: 
             <PlayCircle className="h-12 w-12 text-white/90" strokeWidth={1.5} />
           </Cover>
           <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
-            <CourseCTA courseId={course.id} courseSlug={course.slug} />
+            <CourseCTA courseId={course.id} courseSlug={course.slug} lessonIds={lessonIds} />
             {material && (
               <Link
                 href={`/cursos/${course.slug}/apostila`}
@@ -100,8 +107,7 @@ export default async function CoursePage({ params }: { params: Promise<{ curso: 
       <div className="mt-12">
         <h2 className="text-xl font-bold">Conteúdo do curso</h2>
         <div className="mt-5 space-y-4">
-          {modules.map((mod, i) => {
-            const lessons = getLessonsForModule(mod.id);
+          {modulesWithLessons.map(({ mod, lessons }, i) => {
             return (
               <div key={mod.id} className="rounded-2xl border border-border bg-surface shadow-card">
                 <div className="border-b border-border p-4">

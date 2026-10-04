@@ -8,7 +8,8 @@ import { CareerPathForm } from "@/components/admin/career-path-form";
 import { useAllCareerPaths } from "@/lib/admin/use-admin";
 import { adminStore } from "@/lib/admin/store";
 import type { CareerPath } from "@/lib/types";
-import { careerPaths as seedCareerPaths, getProfession } from "@/lib/data";
+import { careerPaths as seedCareerPaths } from "@/lib/data/career-paths";
+import { getProfessionById } from "@/lib/data/professions";
 
 export default function AdminCareerPathsPage() {
   const paths = useAllCareerPaths();
@@ -30,7 +31,7 @@ export default function AdminCareerPathsPage() {
 
       <div className="mt-8 divide-y divide-border rounded-2xl border border-border bg-surface shadow-card">
         {paths.map((path) => {
-          const profession = getProfession(path.professionId) ?? { name: path.professionId };
+          const profession = getProfessionById(path.professionId) ?? { name: path.professionId };
           return (
             <div key={path.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div>

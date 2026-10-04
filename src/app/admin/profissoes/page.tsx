@@ -9,7 +9,8 @@ import { ProfessionForm } from "@/components/admin/profession-form";
 import { useAllProfessions } from "@/lib/admin/use-admin";
 import { adminStore } from "@/lib/admin/store";
 import type { Profession } from "@/lib/types";
-import { areas, professions as seedProfessions } from "@/lib/data";
+import { areas } from "@/lib/data/areas";
+import { professions as seedProfessions } from "@/lib/data/professions";
 
 export default function AdminProfessionsPage() {
   const professions = useAllProfessions();

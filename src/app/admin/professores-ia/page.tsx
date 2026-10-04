@@ -8,7 +8,7 @@ import { TeacherForm } from "@/components/admin/teacher-form";
 import { useAllTeachers } from "@/lib/admin/use-admin";
 import { adminStore } from "@/lib/admin/store";
 import type { AITeacher } from "@/lib/types";
-import { aiTeachers as seedTeachers } from "@/lib/data";
+import { aiTeachers as seedTeachers } from "@/lib/data/ai-teachers";
 
 export default function AdminTeachersPage() {
   const teachers = useAllTeachers();

@@ -1,31 +1,34 @@
 import { NextResponse } from "next/server";
 import { askClaude, isAIConfigured } from "@/lib/ai/client";
 import { discoveryQuestions, scoreDiscoveryAnswers } from "@/lib/data/discovery";
-import { areas, getProfessionsForArea } from "@/lib/data";
+import { getAreas, getProfessionsForArea } from "@/lib/data";
 
 interface DiscoverBody {
   selections: string[][]; // uma lista de option ids selecionadas por pergunta
 }
 
-function fallbackSuggestions(selections: string[][]) {
+async function fallbackSuggestions(selections: string[][], areas: Awaited<ReturnType<typeof getAreas>>) {
   const ranked = scoreDiscoveryAnswers(selections).slice(0, 3);
-  return ranked.map((r) => {
-    const area = areas.find((a) => a.slug === r.areaSlug);
-    const professions = area ? getProfessionsForArea(area.id).slice(0, 3) : [];
-    return {
-      areaSlug: r.areaSlug,
-      areaName: area?.name ?? r.areaSlug,
-      reason: `Suas respostas indicam afinidade com ${area?.name ?? "esta área"}.`,
-      professions: professions.map((p) => ({ slug: p.slug, name: p.name })),
-    };
-  });
+  return Promise.all(
+    ranked.map(async (r) => {
+      const area = areas.find((a) => a.slug === r.areaSlug);
+      const professions = area ? (await getProfessionsForArea(area.id)).slice(0, 3) : [];
+      return {
+        areaSlug: r.areaSlug,
+        areaName: area?.name ?? r.areaSlug,
+        reason: `Suas respostas indicam afinidade com ${area?.name ?? "esta área"}.`,
+        professions: professions.map((p) => ({ slug: p.slug, name: p.name })),
+      };
+    })
+  );
 }
 
 export async function POST(request: Request) {
   const body = (await request.json()) as DiscoverBody;
   const selections = body.selections ?? [];
+  const areas = await getAreas();
 
-  const heuristic = fallbackSuggestions(selections);
+  const heuristic = await fallbackSuggestions(selections, areas);
 
   if (!isAIConfigured) {
     return NextResponse.json({ source: "heuristica", suggestions: heuristic });
@@ -65,19 +68,21 @@ export async function POST(request: Request) {
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
     const aiSuggestions: { areaSlug: string; reason: string }[] = parsed?.suggestions ?? [];
 
-    const suggestions = aiSuggestions
-      .map((s) => {
-        const area = areas.find((a) => a.slug === s.areaSlug);
-        if (!area) return null;
-        const professions = getProfessionsForArea(area.id).slice(0, 3);
-        return {
-          areaSlug: area.slug,
-          areaName: area.name,
-          reason: s.reason,
-          professions: professions.map((p) => ({ slug: p.slug, name: p.name })),
-        };
-      })
-      .filter(Boolean);
+    const suggestions = (
+      await Promise.all(
+        aiSuggestions.map(async (s) => {
+          const area = areas.find((a) => a.slug === s.areaSlug);
+          if (!area) return null;
+          const professions = (await getProfessionsForArea(area.id)).slice(0, 3);
+          return {
+            areaSlug: area.slug,
+            areaName: area.name,
+            reason: s.reason,
+            professions: professions.map((p) => ({ slug: p.slug, name: p.name })),
+          };
+        })
+      )
+    ).filter(Boolean);
 
     if (suggestions.length === 0) {
       return NextResponse.json({ source: "heuristica", suggestions: heuristic });

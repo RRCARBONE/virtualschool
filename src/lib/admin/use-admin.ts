@@ -2,7 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import { adminStore } from "./store";
-import { professions as seedProfessions, careerPaths as seedCareerPaths, aiTeachers as seedTeachers, allCourses } from "@/lib/data";
+import { professions as seedProfessions } from "@/lib/data/professions";
+import { careerPaths as seedCareerPaths } from "@/lib/data/career-paths";
+import { aiTeachers as seedTeachers } from "@/lib/data/ai-teachers";
+import { allCourses } from "@/lib/data/catalog";
 
 function useAdminState() {
   return useSyncExternalStore(adminStore.subscribe, adminStore.getSnapshot, adminStore.getServerSnapshot);

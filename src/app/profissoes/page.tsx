@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { AreaCard } from "@/components/catalog/area-card";
-import { areas } from "@/lib/data";
+import { getAreas } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Profissões",
   description: "Explore áreas e profissões para descobrir sua próxima formação.",
 };
 
-export default function ProfissoesPage() {
+export default async function ProfissoesPage() {
+  const areas = await getAreas();
   return (
     <div className="container-app py-12">
       <div className="max-w-2xl">

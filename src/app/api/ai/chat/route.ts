@@ -18,9 +18,11 @@ function localFallbackReply(teacherName: string) {
 
 export async function POST(request: Request) {
   const body = (await request.json()) as ChatBody;
-  const course = getCourseById(body.courseId);
-  const teacher = course ? getAITeacher(course.aiTeacherId) : undefined;
-  const lesson = body.lessonId ? getLessonById(body.lessonId) : undefined;
+  const course = await getCourseById(body.courseId);
+  const [teacher, lesson] = await Promise.all([
+    course ? getAITeacher(course.aiTeacherId) : undefined,
+    body.lessonId ? getLessonById(body.lessonId) : undefined,
+  ]);
 
   if (!teacher || !course) {
     return NextResponse.json({ reply: "Não foi possível identificar o curso ou o professor para esta conversa." }, { status: 400 });

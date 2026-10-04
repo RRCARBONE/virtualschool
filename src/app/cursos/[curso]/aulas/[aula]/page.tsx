@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BookOpen, ClipboardList, Target } from "lucide-react";
-import { LessonSidebar } from "@/components/course/lesson-sidebar";
+import { LessonSidebar, type LessonSidebarModule } from "@/components/course/lesson-sidebar";
 import { LessonPlayer } from "@/components/course/lesson-player";
 import { AITeacherChat } from "@/components/course/ai-teacher-chat";
 import {
@@ -20,25 +20,40 @@ export async function generateMetadata({
   params: Promise<{ curso: string; aula: string }>;
 }): Promise<Metadata> {
   const { aula } = await params;
-  const lesson = getLessonById(aula);
+  const lesson = await getLessonById(aula);
   return lesson ? { title: lesson.title } : {};
 }
 
 export default async function LessonPage({ params }: { params: Promise<{ curso: string; aula: string }> }) {
   const { curso, aula } = await params;
-  const course = getCourse(curso);
-  const lesson = getLessonById(aula);
+  const [course, lesson] = await Promise.all([getCourse(curso), getLessonById(aula)]);
   if (!course || !lesson) notFound();
 
-  const mod = getModuleById(lesson.moduleId);
+  const mod = await getModuleById(lesson.moduleId);
   if (!mod || mod.courseId !== course.id) notFound();
 
-  const teacher = getAITeacher(course.aiTeacherId);
-  const orderedLessons = getAllLessonsForCourse(course.id).map((l) => l.lesson);
+  const [teacher, lessonPairs, activities] = await Promise.all([
+    getAITeacher(course.aiTeacherId),
+    getAllLessonsForCourse(course.id),
+    getActivitiesForLesson(lesson.id),
+  ]);
+
+  const orderedLessons = lessonPairs.map((l) => l.lesson);
   const currentIndex = orderedLessons.findIndex((l) => l.id === lesson.id);
   const prevLessonId = currentIndex > 0 ? orderedLessons[currentIndex - 1].id : undefined;
   const nextLessonId = currentIndex < orderedLessons.length - 1 ? orderedLessons[currentIndex + 1].id : undefined;
-  const activities = getActivitiesForLesson(lesson.id);
+
+  const sidebarModules: LessonSidebarModule[] = [];
+  const moduleIndexById = new Map<string, number>();
+  for (const pair of lessonPairs) {
+    let index = moduleIndexById.get(pair.module.id);
+    if (index === undefined) {
+      index = sidebarModules.length;
+      moduleIndexById.set(pair.module.id, index);
+      sidebarModules.push({ id: pair.module.id, title: pair.module.title, lessons: [] });
+    }
+    sidebarModules[index].lessons.push({ id: pair.lesson.id, title: pair.lesson.title });
+  }
 
   return (
     <div className="container-app grid gap-8 py-8 lg:grid-cols-[280px_1fr]">
@@ -48,7 +63,7 @@ export default async function LessonPage({ params }: { params: Promise<{ curso: 
             ← {course.title}
           </Link>
           <div className="mt-4">
-            <LessonSidebar courseId={course.id} courseSlug={course.slug} currentLessonId={lesson.id} />
+            <LessonSidebar courseSlug={course.slug} currentLessonId={lesson.id} modules={sidebarModules} />
           </div>
         </div>
       </aside>

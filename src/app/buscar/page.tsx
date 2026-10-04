@@ -22,7 +22,7 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
-  const results = query ? globalSearch(query) : [];
+  const results = query ? await globalSearch(query) : [];
 
   return (
     <div className="container-app max-w-3xl py-12">

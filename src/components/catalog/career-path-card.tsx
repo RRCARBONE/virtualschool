@@ -2,11 +2,13 @@ import Link from "next/link";
 import { Layers } from "lucide-react";
 import type { CareerPath } from "@/lib/types";
 import { Cover } from "@/components/ui/cover";
-import { getCoursesForCareerPath, getProfession } from "@/lib/data";
+import { getCoursesForCareerPath, getProfessionById } from "@/lib/data";
 
-export function CareerPathCard({ path }: { path: CareerPath }) {
-  const courses = getCoursesForCareerPath(path.slug);
-  const profession = getProfession(path.professionId);
+export async function CareerPathCard({ path }: { path: CareerPath }) {
+  const [courses, profession] = await Promise.all([
+    getCoursesForCareerPath(path.slug),
+    getProfessionById(path.professionId),
+  ]);
 
   return (
     <Link

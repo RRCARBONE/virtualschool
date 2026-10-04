@@ -7,17 +7,21 @@ import { getCourse, getMaterialForCourse, getActivityById } from "@/lib/data";
 
 export async function generateMetadata({ params }: { params: Promise<{ curso: string }> }): Promise<Metadata> {
   const { curso } = await params;
-  const course = getCourse(curso);
+  const course = await getCourse(curso);
   return course ? { title: `Apostila — ${course.title}` } : {};
 }
 
 export default async function MaterialPage({ params }: { params: Promise<{ curso: string }> }) {
   const { curso } = await params;
-  const course = getCourse(curso);
+  const course = await getCourse(curso);
   if (!course) notFound();
 
-  const material = getMaterialForCourse(course.id);
+  const material = await getMaterialForCourse(course.id);
   if (!material) notFound();
+
+  const exerciseIds = material.chapters.flatMap((c) => c.exerciseIds);
+  const exercises = await Promise.all(exerciseIds.map((id) => getActivityById(id)));
+  const activityTitleById = new Map(exercises.filter(Boolean).map((a) => [a!.id, a!.title]));
 
   return (
     <div className="container-app grid gap-8 py-10 lg:grid-cols-[260px_1fr]">
@@ -87,15 +91,15 @@ export default async function MaterialPage({ params }: { params: Promise<{ curso
                   </p>
                   <div className="mt-2 space-y-2">
                     {chapter.exerciseIds.map((id) => {
-                      const activity = getActivityById(id);
-                      if (!activity) return null;
+                      const title = activityTitleById.get(id);
+                      if (!title) return null;
                       return (
                         <Link
                           key={id}
                           href={`/cursos/${course.slug}/atividades/${id}`}
                           className="block rounded-xl border border-border bg-surface p-3 text-sm hover:bg-surface-muted"
                         >
-                          {activity.title}
+                          {title}
                         </Link>
                       );
                     })}

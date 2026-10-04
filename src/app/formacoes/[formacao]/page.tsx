@@ -5,7 +5,15 @@ import { ChevronRight, Clock, Layers, Star } from "lucide-react";
 import { Cover } from "@/components/ui/cover";
 import { RatingStars } from "@/components/rating-stars";
 import { FormationHeaderProgress, CourseJourneyItem } from "@/components/career-path/formation-journey";
-import { getCareerPath, getCoursesForCareerPath, getProfession, getArea, getReviewsFor, averageRating } from "@/lib/data";
+import {
+  getCareerPath,
+  getCoursesForCareerPath,
+  getProfessionById,
+  getArea,
+  getAllLessonsForCourse,
+  getReviewsFor,
+  averageRating,
+} from "@/lib/data";
 
 export async function generateMetadata({
   params,
@@ -13,22 +21,28 @@ export async function generateMetadata({
   params: Promise<{ formacao: string }>;
 }): Promise<Metadata> {
   const { formacao } = await params;
-  const path = getCareerPath(formacao);
+  const path = await getCareerPath(formacao);
   if (!path) return {};
   return { title: path.title, description: path.description };
 }
 
 export default async function FormationPage({ params }: { params: Promise<{ formacao: string }> }) {
   const { formacao } = await params;
-  const path = getCareerPath(formacao);
+  const path = await getCareerPath(formacao);
   if (!path) notFound();
 
-  const courses = getCoursesForCareerPath(path.slug);
-  const profession = getProfession(path.professionId);
-  const area = profession ? getArea(profession.areaId) : undefined;
+  const courses = await getCoursesForCareerPath(path.slug);
+  const profession = await getProfessionById(path.professionId);
+  const area = profession ? await getArea(profession.areaId) : undefined;
   const pathReviews = getReviewsFor({ careerPathId: path.id });
   const rating = averageRating(pathReviews);
-  const totalLessons = courses.reduce((sum, c) => sum + c.moduleIds.length, 0);
+
+  const coursesWithLessons = await Promise.all(
+    courses.map(async (course) => {
+      const lessons = await getAllLessonsForCourse(course.id);
+      return { course, lessonIds: lessons.map(({ lesson }) => lesson.id) };
+    })
+  );
 
   return (
     <div className="container-app py-12">
@@ -65,16 +79,16 @@ export default async function FormationPage({ params }: { params: Promise<{ form
           <Cover gradient={path.coverImage} className="h-32 w-full">
             <Layers className="h-10 w-10 text-white/90" strokeWidth={1.5} />
           </Cover>
-          <FormationHeaderProgress pathId={path.id} pathSlug={path.slug} />
+          <FormationHeaderProgress pathId={path.id} courses={coursesWithLessons} />
         </div>
       </div>
 
       <div className="mt-12">
         <h2 className="text-xl font-bold">Sua jornada</h2>
-        <p className="mt-1 text-sm text-muted">{totalLessons > 0 ? "" : ""}Siga os cursos em ordem para construir uma base sólida.</p>
+        <p className="mt-1 text-sm text-muted">Siga os cursos em ordem para construir uma base sólida.</p>
         <div className="mt-5 space-y-3">
-          {courses.map((course, i) => (
-            <CourseJourneyItem key={course.id} course={course} index={i} />
+          {coursesWithLessons.map(({ course, lessonIds }, i) => (
+            <CourseJourneyItem key={course.id} course={course} index={i} lessonIds={lessonIds} />
           ))}
         </div>
       </div>
